@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>C-SCAN Disk Scheduling Simulation</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f9;
+      padding: 20px;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #4CAF50;
+    }
+    input, button {
+      margin: 5px 0;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      font-size: 1em;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .output {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>C-SCAN Disk Scheduling Simulation</h1>
+  <label for="requests">Enter disk requests (comma-separated):</label><br>
+  <input type="text" id="requests" placeholder="e.g., 95, 180, 34, 119, 11, 123, 62, 64"><br>
+  <label for="initialHead">Enter initial head position:</label><br>
+  <input type="number" id="initialHead" placeholder="e.g., 50"><br>
+  <label for="diskSize">Enter disk size:</label><br>
+  <input type="number" id="diskSize" placeholder="e.g., 200"><br>
+  <button onclick="runCSCAN()">Run C-SCAN</button>
+
+  <div class="output" id="output"></div>
+
+  <script>
+    function runCSCAN() {
+      // Get inputs
+      const requestsInput = document.getElementById('requests').value;
+      const initialHead = parseInt(document.getElementById('initialHead').value, 10);
+      const diskSize = parseInt(document.getElementById('diskSize').value, 10);
+
+      // Parse requests and validate inputs
+      if (!requestsInput || isNaN(initialHead) || isNaN(diskSize)) {
+        alert('Please enter valid inputs.');
+        return;
+      }
+      let requests = requestsInput.split(',').map(Number).filter(n => !isNaN(n));
+      
+      // Sort requests and split into left and right
+      requests.sort((a, b) => a - b);
+      let left = requests.filter(req => req < initialHead);
+      let right = requests.filter(req => req >= initialHead);
+
+      let seekSequence = [];
+      let totalSeek = 0;
+      let currentPosition = initialHead;
+
+      // Process requests to the right
+      for (let i = 0; i < right.length; i++) {
+        seekSequence.push(right[i]);
+        totalSeek += Math.abs(currentPosition - right[i]);
+        currentPosition = right[i];
+      }
+
+      // Move to end and wrap around to start
+      if (right.length > 0) {
+        totalSeek += (diskSize - 1 - currentPosition); // Move to the end
+        totalSeek += (diskSize - 1); // Move to the start
+        currentPosition = 0;
+      }
+
+      // Process remaining requests on the left
+      for (let i = 0; i < left.length; i++) {
+        seekSequence.push(left[i]);
+        totalSeek += Math.abs(currentPosition - left[i]);
+        currentPosition = left[i];
+      }
+
+      // Display the result
+      document.getElementById('output').innerHTML = `
+        <p><strong>Seek sequence:</strong> ${seekSequence.join(', ')}</p>
+        <p><strong>Total seek operations:</strong> ${totalSeek}</p>
+      `;
+    }
+  </script>
+
+</body>
+</html>
